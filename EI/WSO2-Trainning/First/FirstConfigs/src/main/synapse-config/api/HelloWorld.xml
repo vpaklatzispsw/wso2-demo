@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<api context="/HelloWorld" name="HelloWorld" xmlns="http://ws.apache.org/ns/synapse">
+    <resource methods="GET">
+        <inSequence>
+            <log level="full"/>
+            <!--  {"userid":"1111"} -->
+            <propertyGroup description="RequestToVars">
+                <property expression="json-eval($.userid)" name="SUserID" scope="default" type="STRING"/>
+                <property expression="json-eval($.catid)" name="ScatID" scope="default" type="STRING"/>
+            </propertyGroup>
+            <switch description="Core Return Check" source="get-property('ScatID')">
+                <case regex="INT">
+                    <payloadFactory description="Call Service For user details" media-type="json">
+                        <format>
+					{"userid":"$1"}
+				</format>
+                        <args>
+                            <arg evaluator="xml" expression="get-property('SUserID')" literal="true"/>
+                        </args>
+                    </payloadFactory>
+                    <log level="full"/>
+                    <call description="call UserID">
+                        <endpoint key="GetUser"/>
+                    </call>
+                    <propertyGroup description="ResponseToVars">
+                        <property expression="json-eval($.firstname)" name="SUserFirstname" scope="default" type="STRING"/>
+                        <property expression="json-eval($.Secondname)" name="SUserSecondname" scope="default" type="STRING"/>
+                    </propertyGroup>
+                    <payloadFactory description="Create response payload" media-type="json">
+                        <format>
+							{
+							"Surname": $1,
+							"Firstname": $2,
+							"userid": "$3"
+							}
+						</format>
+                        <args>
+                            <arg evaluator="xml" expression="get-property('SUserSecondname')" literal="true"/>
+                            <arg evaluator="xml" expression="get-property('SUserFirstname')" literal="true"/>
+                            <arg evaluator="xml" expression="get-property('SUserID')" literal="true"/>
+                        </args>
+                    </payloadFactory>
+                    <respond/>
+                </case>
+                <default/>
+            </switch>
+        </inSequence>
+        <outSequence/>
+        <faultSequence/>
+    </resource>
+</api>
